@@ -92,6 +92,20 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
         }
 
+        public static void LogTeamToTable(JToken team)
+        {
+            for (int i = 1; i < 7; i++)
+            {
+                var monsterName = (string)team[$"monster_{i}_id"];
+                if (monsterName == "")
+                {
+                    break;
+                }
+                //Print til csv
+                System.IO.File.AppendAllText(Settings.StartupPath + @"/championLog.txt", monsterName + ",");
+            }
+        }
+
         public static void LogTeamToTable(JToken team, int mana, string rulesets)
         {
             var t = new TablePrinter("Mana", "Rulesets", "Quest Prio", "Win %", "Team Rank");
