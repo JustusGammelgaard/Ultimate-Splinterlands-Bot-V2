@@ -92,7 +92,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
         }
 
-        public static void LogTeamToTable(JToken team)
+        public static void LogChampions(JToken team)
         {
             for (int i = 1; i < 7; i++)
             {

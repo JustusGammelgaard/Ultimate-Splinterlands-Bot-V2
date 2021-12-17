@@ -755,6 +755,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 {
                     Log.WriteToLog($"{Username}: API Response:");
                     Log.LogTeamToTable(team, mana, rulesets);
+                    Log.LogChampions(team);s
                 }
                 return team;
             }
