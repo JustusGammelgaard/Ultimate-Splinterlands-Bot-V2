@@ -871,5 +871,12 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 Thread.Sleep(500);
             } while (driver.FindElements(By.ClassName("loading")).Count > 0);
         }
+
+
+        public void TransferCard(IWebDriver driver, string toUser, int cardID, bool gold)
+        {
+            driver.Navigate().GoToUrl("https://splinterlands.com/?p=card_details&id=" + cardID + "&gold="+ gold.ToString().ToLower() + "&edition=3&tab=");
+            driver.ClickElementOnPage(By.ClassName("card-checkbox"));
+        }
     }
 }

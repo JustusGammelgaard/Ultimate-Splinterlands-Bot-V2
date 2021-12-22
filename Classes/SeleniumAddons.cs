@@ -74,12 +74,12 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                         }
                         //chromeOptions.AddArgument("--window-size=1920,1080");
                         chromeOptions.AddArgument("--window-size=1800,1500");
-                        var chromeDriverService = ChromeDriverService.CreateDefaultService(Settings.StartupPath);
+                        //var chromeDriverService = ChromeDriverService.CreateDefaultService(Settings.StartupPath);
                         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows) && !Settings.DebugMode)
                         {
-                            chromeDriverService.HideCommandPromptWindow = true;
+                            //chromeDriverService.HideCommandPromptWindow = true;
                         }
-                        driver = new ChromeDriver(chromeDriverService, chromeOptions, TimeSpan.FromSeconds(timeOut));
+                        driver = new ChromeDriver(chromeOptions);
                     }
                     driver.Manage().Window.Position = new System.Drawing.Point(0, 0);
                     //driver.Manage().Window.Maximize();

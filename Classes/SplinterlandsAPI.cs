@@ -131,6 +131,8 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return (-1, -1, -1, -1);
         }
 
+
+
         public static async Task<JToken> GetPlayerBalancesAsync(string username)
         {
             try
@@ -184,7 +186,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return (null, null);
         }
 
-        public static async Task<Card[]> GetPlayerCardsAsync(string username)
+        public static async Task<Card[]> GetPlayerCardsAsync(string username, bool filterCards = true)
         {
             try
             {
@@ -247,8 +249,10 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 }
 
                 // only use highest level/gold cards
-                Card[] cardsFiltered = cards.Select(x => cards.Where(y => x.card_detail_id == y.card_detail_id).First()).Distinct().ToArray();
-                return cardsFiltered;
+                if (filterCards)
+                    return cards.Select(x => cards.Where(y => x.card_detail_id == y.card_detail_id).First()).Distinct().ToArray();
+                else
+                    return cards.ToArray();
             }
             catch (Exception ex)
             {
@@ -256,5 +260,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
             return Settings.PhantomCards.Select(x => new Card(x, "starter-" + x + "-" + Helper.GenerateRandomString(5), "1", false)).ToArray();
         }
+
+
     }
 }

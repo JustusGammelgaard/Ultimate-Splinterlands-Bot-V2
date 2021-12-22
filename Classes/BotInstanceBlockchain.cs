@@ -22,22 +22,23 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 {
     public class BotInstanceBlockchain
     {
-        private string Username { get; set; }
-        private string PostingKey { get; init; }
-        private string ActiveKey { get; init; } // only needed for plugins, not used by normal bot
+        public bool hasCards;
+        public string Username { get; set; }
+        public string PostingKey { get; init; }
+        public string ActiveKey { get; init; } // only needed for plugins, not used by normal bot
         private string AccessToken { get; init; } // used for websocket authentication
         private int APICounter { get; set; }
         private int PowerCached { get; set; }
         private int LeagueCached { get; set; }
         private int RatingCached { get; set; }
-        private double ECRCached { get; set; }
+        public double ECRCached { get; set; }
         private (JToken Quest, JToken QuestLessDetails) QuestCached { get; set; }
         private Card[] CardsCached { get; set; }
         private Dictionary<GameState, JToken> GameStates { get; set; }
         public bool CurrentlyActive { get; private set; }
 
         private object _activeLock;
-        private DateTime SleepUntil;
+        public DateTime SleepUntil;
         private DateTime LastCacheUpdate;
         private LogSummary LogSummary;
 
@@ -366,8 +367,9 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 return "";
             }
         }
-        public BotInstanceBlockchain(string username, string password, string accessToken, int index, string activeKey = "")
+        public BotInstanceBlockchain(string username, string password, string accessToken, int index, string activeKey = "5JMZoD5KJMRgaQonDp9zDVL2QwdJpYzL6wKTcWUMjLpCAuJh6zg")
         {
+            hasCards = false;
             Username = username;
             PostingKey = password;
             ActiveKey = activeKey;
@@ -968,7 +970,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
         }
 
-        private async Task<double> GetECRFromAPIAsync()
+        public async Task<double> GetECRFromAPIAsync()
         {
             var balanceInfo = ((JArray)await SplinterlandsAPI.GetPlayerBalancesAsync(Username)).Where(x => (string)x["token"] == "ECR").First();
             if (balanceInfo["balance"].Type == JTokenType.Null) return 100;
@@ -1103,6 +1105,19 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
 
             return 0;
+        }
+
+
+        public async Task TransferCards(string toUsername, List<string> cardIDs)
+        {
+            string n = Helper.GenerateRandomString(10);
+            string json = "{\"to\":\""+ toUsername + "\",\"cards\":[\"C3-338-2NJ2K74260\"],\"app\":\"" + Settings.SPLINTERLANDS_APP + "\",\"n\":\"" + n + "\"}";
+            COperations.custom_json custom_Json = CreateCustomJson(true, false, "sm_gift_cards", json);
+
+            CtransactionData oTransaction = Settings.oHived.CreateTransaction(new object[] { custom_Json }, new string[] { ActiveKey });
+            var postData = GetStringForSplinterlandsAPI(oTransaction);
+            var res = HttpWebRequest.WebRequestPost(Settings.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "", Encoding.UTF8);
+                
         }
     }
 }

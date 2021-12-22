@@ -9,13 +9,16 @@ using System.Threading;
 using Pastel;
 using System.Drawing;
 using System.Reflection;
+using OpenQA.Selenium;
+using OpenQA.Selenium.Chrome;
+using OpenQA.Selenium.Firefox;
 
 namespace Ultimate_Splinterlands_Bot_V2
 {
     class Program
     {
         private static object _TaskLock = new object();
-        static void Main(string[] args)
+        static async Task Main(string[] args)
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
@@ -55,8 +58,14 @@ namespace Ultimate_Splinterlands_Bot_V2
 
             CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
             CancellationToken token = cancellationTokenSource.Token;
-            _ = Task.Run(async () => await BotLoopAsync(token)).ConfigureAwait(false);
 
+
+            // await tester.testitAsync();
+
+            await BotLoopTransfer(token);
+            //_ = Task.Run(async () => await BotLoopTransfer(token)).ConfigureAwait(false);
+            
+            /*
             string command = "";
             while (true)
             {
@@ -72,7 +81,86 @@ namespace Ultimate_Splinterlands_Bot_V2
                         break;
                 }
             }   
+            */
         }
+
+        static async Task BotLoopTransfer(CancellationToken token)
+        {
+            bool transferSuccess = true;
+
+            while (!token.IsCancellationRequested) // basically while(true)
+            {
+                var timer = DateTime.Now;
+                int currentBot = 0;
+                Settings.BotInstancesBlockchain[0].hasCards = true;
+
+                // On start up and every 12 hours, a check is performed.
+                // Master receives all cards, and the process starts with the master.
+                // If a transfer fails, this is called (so all cards can be returned)
+                var transfere = new HTMLTransferCards(null, null, null, new CardsToTrade());
+
+                bool masterTransfered = false;
+                int masterTransferFailures = 0;
+                while (!masterTransfered)
+                {
+                    masterTransfered = await transfere.SendCardsToMasterAsync();
+
+                    if (masterTransfered) break;
+
+                    Thread.Sleep(1000 * 60 * 10); //10 min sleep
+                    masterTransferFailures += 1;
+
+                    if (masterTransferFailures >= 10)
+                    {
+                        throw new Exception("Errors in master transfering.. Aborting.");
+                    }
+                }
+
+                while ((DateTime.Now - timer).TotalHours < 12 && transferSuccess)
+                {
+
+                    while (SplinterlandsAPI.CheckForMaintenance().Result)
+                    {
+                        Log.WriteToLog("Splinterlands maintenance - waiting 3 minutes");
+                        Thread.Sleep(3 * 60000);
+                    }
+
+                    double ECRCached = await Settings.BotInstancesBlockchain[currentBot].GetECRFromAPIAsync();
+                    if (ECRCached < Settings.ECRThreshold)
+                    {
+                        // Transfer cards to acc with most ECR. If all have below threshold, sleep for a long time. 
+                        var newBot = await HTMLTransferCards.FindAccWithMaxECRAsync();
+                        // No bots have more than threshold
+                        if (newBot == -1)
+                        {
+                            Thread.Sleep(1000 * 15); // sleep 15 min
+                        }
+                        else if (newBot == currentBot) ; // pass - something weird happened.
+                        else
+                        {
+                            var botinfo = Settings.BotInstancesBlockchain[currentBot];
+                            transfere = new HTMLTransferCards(botinfo.Username, botinfo.PostingKey, botinfo.ActiveKey, new CardsToTrade());
+                            transferSuccess = transfere.TradeAllCards(Settings.BotInstancesBlockchain[newBot].Username);
+                            Settings.BotInstancesBlockchain[currentBot].hasCards = false;
+                            Settings.BotInstancesBlockchain[newBot].hasCards = true;
+
+                            currentBot = newBot;
+
+                        }
+                        continue;
+                    }
+
+                    var result = await Settings.BotInstancesBlockchain[currentBot].DoBattleAsync(0, false, currentBot);
+                    Log.LogBattleSummaryToTable();
+
+                    
+                    while (Settings.BotInstancesBlockchain[currentBot].SleepUntil > DateTime.Now)
+                        Thread.Sleep(1000 * Settings._Random.Next(5, 10)); // Sleep for 5-10 sec, while timer goes down.
+                }
+            }
+
+        }
+
 
         static async Task BotLoopAsync(CancellationToken token)
         {
@@ -80,6 +168,7 @@ namespace Ultimate_Splinterlands_Bot_V2
             int nextBrowserInstance = -1;
             int nextBotInstance = -1;
             bool firstRuntrough = true;
+            int botInstance = 0;
 
             bool logoutNeeded = Settings.BrowserMode ? Settings.BotInstancesBrowser.Count != Settings.MaxBrowserInstances : false;
 
@@ -93,11 +182,10 @@ namespace Ultimate_Splinterlands_Bot_V2
                     {
                         lock (_TaskLock)
                         {
-                            if (++nextBotInstance >= (Settings.LightningMode ? Settings.BotInstancesBlockchain.Count : Settings.BotInstancesBrowser.Count))
+                            if ((nextBotInstance++) >= (Settings.LightningMode ? Settings.BotInstancesBlockchain.Count : Settings.BotInstancesBrowser.Count))
                             {
                                 firstRuntrough = false;
                                 Log.LogBattleSummaryToTable();
-                                Log.WriteSupportInformationToLog();
                                 Thread.Sleep(5000);
                                 nextBotInstance = 0;
                                 while (SplinterlandsAPI.CheckForMaintenance().Result)
@@ -135,14 +223,19 @@ namespace Ultimate_Splinterlands_Bot_V2
 
                             if (Settings.LightningMode)
                             {
+                                // Finder første frie bot (der ikke spilles)
                                 while (Settings.BotInstancesBlockchain.ElementAt(nextBotInstance).CurrentlyActive)
                                 {
-                                    nextBotInstance++;
-                                    nextBotInstance = nextBotInstance >= Settings.BotInstancesBlockchain.Count ? 0 : nextBotInstance;
+                                   nextBotInstance++;
+                                   nextBotInstance = nextBotInstance >= Settings.BotInstancesBlockchain.Count ? 0 : nextBotInstance;
                                 }
                                 // create local copies for thread safety
-                                int botInstance = nextBotInstance;
-                                int browserInstance = nextBrowserInstance;
+
+
+
+
+                                botInstance = nextBotInstance; // Brug denne her til at styre hvilken bot der skal spille
+                                int browserInstance = nextBrowserInstance; // Ubrugt i Blockchain mode (altid -1)
 
                                 instances.Add(Task.Run(async () =>
                                 {
@@ -170,7 +263,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                                 Settings.SeleniumInstances[nextBrowserInstance] = (Settings.SeleniumInstances[nextBrowserInstance].driver, false);
 
                                 // create local copies for thread safety
-                                int botInstance = nextBotInstance;
+                                botInstance = nextBotInstance;
                                 int browserInstance = nextBrowserInstance;
 
                                 instances.Add(Task.Run(async () =>
@@ -183,7 +276,17 @@ namespace Ultimate_Splinterlands_Bot_V2
                                     }
                                 }, CancellationToken.None));
                             }
+
                         }
+
+                        double ECRCached = await Settings.BotInstancesBlockchain[botInstance].GetECRFromAPIAsync();
+                        if (ECRCached < Settings.ECRThreshold)
+                        {
+                            // Transfer kort + assign next bot
+                            nextBotInstance++;
+                            nextBotInstance = nextBotInstance >= Settings.BotInstancesBlockchain.Count ? 0 : nextBotInstance;
+                        }
+
                     }
                     catch (Exception ex)
                     {
@@ -437,14 +540,8 @@ namespace Ultimate_Splinterlands_Bot_V2
                 
                 if (temp.Length == 2)
                 {
-                    if (Settings.LightningMode)
-                    {
-                        Settings.BotInstancesBlockchain.Add(new BotInstanceBlockchain(temp[0].Trim().ToLower(), temp[1].Trim(), accessToken, indexCounter++));
-                    }
-                    else
-                    {
-                        Settings.BotInstancesBrowser.Add(new BotInstanceBrowser(temp[0].Trim().ToLower(), temp[1].Trim(), indexCounter++));
-                    }
+                    Log.WriteToLog("Account.txt reading error. Must include activation key. Account.txt should have form: username : posting key : activation key");
+                    throw new Exception("Account.txt must now include activation key. Account.txt should have form: username : posting key : activation key");
                 }
                 else if (temp.Length == 3)
                 {
