@@ -60,28 +60,10 @@ namespace Ultimate_Splinterlands_Bot_V2
             CancellationToken token = cancellationTokenSource.Token;
 
 
-            // await tester.testitAsync();
+            //await tester.testitAsync();
 
             await BotLoopTransfer(token);
-            //_ = Task.Run(async () => await BotLoopTransfer(token)).ConfigureAwait(false);
-            
-            /*
-            string command = "";
-            while (true)
-            {
-                command = Console.ReadLine();
-
-                switch (command)
-                {
-                    case "stop":
-                        Log.WriteToLog("Stopping bot...", Log.LogType.Warning);
-                        cancellationTokenSource.Cancel();
-                        break;
-                    default:
-                        break;
-                }
-            }   
-            */
+           
         }
 
         static async Task BotLoopTransfer(CancellationToken token)
@@ -133,7 +115,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                         // No bots have more than threshold
                         if (newBot == -1)
                         {
-                            Thread.Sleep(1000 * 15); // sleep 15 min
+                            Thread.Sleep(1000 * 60 * 15); // sleep 15 min
                         }
                         else if (newBot == currentBot) ; // pass - something weird happened.
                         else

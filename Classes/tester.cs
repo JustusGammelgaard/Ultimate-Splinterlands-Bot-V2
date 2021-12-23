@@ -19,13 +19,15 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
         public static async Task testitAsync()
         {
-            var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync("soendergod");
+            var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync("raynie");
             var QuestCached = await SplinterlandsAPI.GetPlayerQuestAsync("soendergod");
-            var splinters = new string[4];
+            var splinters = new string[6];
             splinters[0] = "earth";
             splinters[1] = "life";
             splinters[2] = "death";
             splinters[3] = "dragon";
+            splinters[4] = "water";
+            splinters[5] = "fire";
 
             var manas = Enumerable.Range(13, 40).ToList();
 
@@ -36,8 +38,15 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
 
                 var APIResponse = await BattleAPI.GetTeamFromAPIAsync(manas[i], "Noxious Fumes", splinters, CardsCached, QuestCached.quest, QuestCached.questLessDetails, username);
-                
 
+                string color = (string)APIResponse["color"];
+                string summonerID = (string)APIResponse["summoner_id"];
+                string monster1 = (string)APIResponse["monster_1_id"];
+                string monster2 = (string)APIResponse["monster_2_id"];
+                string monster3 = (string)APIResponse["monster_3_id"];
+                string monster4 = (string)APIResponse["monster_4_id"];
+                string monster5 = (string)APIResponse["monster_5_id"];
+                string monster6 = (string)APIResponse["monster_6_id"];
             }
         }
         public static string RandomString(int length)
