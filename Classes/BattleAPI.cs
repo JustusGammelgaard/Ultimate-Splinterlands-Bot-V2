@@ -14,6 +14,18 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 {
     public static class BattleAPI
     {
+        private static Random random = new Random();
+
+        public static string GetRandomUsername()
+        {
+            var randomUsernames = new List<string> { "nnats", "crom228", "crom229", "crom230", "camap802","phuc588","phuc430","phuc456", "vindicator",
+                                                    "breadtime", "ggez", "kama533", "potatokiller", "cleaninglady", "frodo", "zonsan62", "zonsan70",
+                                                    "crom145", "crom315", "crom221", "crom548", "crom781", "omun021", "omun312", "lazking501", "lazking502", "lazking351",
+                                                    "qhunter011", "qhunter015"};
+
+            return randomUsernames[random.Next(0, randomUsernames.Count - 1)];
+        }
+
         public static async Task<JToken> GetTeamFromAPIAsync(int mana, string rules, string[] splinters, Card[] cards, JToken quest, JToken questLessDetails, string username, bool secondTry = false, bool ignorePrivateAPI = false)
         {
             if (Settings.UsePrivateAPI && !ignorePrivateAPI)
@@ -28,6 +40,10 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
         private static async Task<JToken> GetTeamFromPublicAPIAsync(int mana, string rules, string[] splinters, Card[] cards, JToken quest, JToken questLessDetails, string username, bool secondTry = false)
         {
+            string userNameFake = GetRandomUsername();
+
+            Log.WriteToLog($"{username}: rules are: " + rules);
+
             Log.WriteToLog($"{username}: Requesting team from public API...");
             try
             {
@@ -43,7 +59,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
                 string urlGetTeam = $"{Settings.PublicAPIUrl}get_team/";
                 string urlGetTeamByHash = $"{Settings.PublicAPIUrl}get_team_by_hash/";
-                string APIResponse = await PostJSONToApi(matchDetails, urlGetTeam, username);
+                string APIResponse = await PostJSONToApi(matchDetails, urlGetTeam, userNameFake);
                 int counter = 0;
                 do
                 {
@@ -53,7 +69,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                         Log.WriteToLog($"{username}: Waiting 10 seconds for API to calculate team...");
                         await Task.Delay(10 * 1000);
                         JObject hashData = new JObject(new JProperty("hash", APIResponse.Split(":")[1]));
-                        APIResponse = await PostJSONToApi(hashData, urlGetTeamByHash, username);
+                        APIResponse = await PostJSONToApi(hashData, urlGetTeamByHash, userNameFake);
                     }
                     else
                     {
@@ -67,14 +83,14 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                     {
                         Log.WriteToLog($"{username}: API Overloaded! Waiting 25 seconds and trying again after...", Log.LogType.Warning);
                         System.Threading.Thread.Sleep(25000);
-                        return await GetTeamFromPublicAPIAsync(mana, rules, splinters, cards, quest, questLessDetails, username, true);
+                        return await GetTeamFromPublicAPIAsync(mana, rules, splinters, cards, quest, questLessDetails, userNameFake, true);
                     }
                     else
                     {
                         var sw = new Stopwatch();
                         sw.Start();
                         Log.WriteToLog($"{username}: API Rate Limit reached! Waiting until no longer blocked...", Log.LogType.Warning);
-                        await CheckRateLimitLoopAsync(username, Settings.PublicAPIUrl);
+                        await CheckRateLimitLoopAsync(userNameFake, Settings.PublicAPIUrl);
                         sw.Stop();
                         // return null so team doesn't get submitted
                         if (sw.Elapsed.TotalSeconds > 200)

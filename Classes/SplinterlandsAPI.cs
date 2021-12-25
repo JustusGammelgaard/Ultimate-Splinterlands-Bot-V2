@@ -186,7 +186,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return (null, null);
         }
 
-        public static async Task<Card[]> GetPlayerCardsAsync(string username, bool filterCards = true)
+        public static async Task<Card[]> GetPlayerCardsAsync(string username, bool filterCards = true, bool removePowerSticks = true)
         {
             try
             {
@@ -241,6 +241,18 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 //)
                 //.Select(x => new Card((string)x["card_detail_id"], (string)x["uid"], (string)x["level"], (bool)x["gold"]))
                 //.Distinct().OrderByDescending(x => x.SortValue()).ToArray());
+
+
+                // Remove cards, which must never be played:
+                if (removePowerSticks)
+                {
+                    var CIs = new CardsToTrade();
+                    foreach(var c in CIs.AllCards)
+                    {
+                        cards.RemoveAll(x => x.card_long_id == c.UUID);
+                    }
+                }
+
 
                 // add basic cards
                 foreach (string cardId in Settings.PhantomCards)

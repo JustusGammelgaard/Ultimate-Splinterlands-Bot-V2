@@ -62,16 +62,18 @@ namespace Ultimate_Splinterlands_Bot_V2
 
             //await tester.testitAsync();
 
+
+
             await BotLoopTransfer(token);
            
         }
 
         static async Task BotLoopTransfer(CancellationToken token)
         {
-            bool transferSuccess = true;
 
             while (!token.IsCancellationRequested) // basically while(true)
             {
+                bool transferSuccess = true;
                 var timer = DateTime.Now;
                 int currentBot = 0;
                 Settings.BotInstancesBlockchain[0].hasCards = true;
@@ -115,14 +117,15 @@ namespace Ultimate_Splinterlands_Bot_V2
                         // No bots have more than threshold
                         if (newBot == -1)
                         {
-                            Thread.Sleep(1000 * 60 * 15); // sleep 15 min
+                            Log.WriteToLog("No account with enough ECR found. Sleeping for 20 min.");
+                            Thread.Sleep(1000 * 60 * 20); // sleep 20 min
                         }
                         else if (newBot == currentBot) ; // pass - something weird happened.
                         else
                         {
                             var botinfo = Settings.BotInstancesBlockchain[currentBot];
                             transfere = new HTMLTransferCards(botinfo.Username, botinfo.PostingKey, botinfo.ActiveKey, new CardsToTrade());
-                            transferSuccess = transfere.TradeAllCards(Settings.BotInstancesBlockchain[newBot].Username);
+                            transferSuccess = await transfere.TradeAllCardsAsync(Settings.BotInstancesBlockchain[newBot].Username);
                             Settings.BotInstancesBlockchain[currentBot].hasCards = false;
                             Settings.BotInstancesBlockchain[newBot].hasCards = true;
 
@@ -137,7 +140,7 @@ namespace Ultimate_Splinterlands_Bot_V2
 
                     
                     while (Settings.BotInstancesBlockchain[currentBot].SleepUntil > DateTime.Now)
-                        Thread.Sleep(1000 * Settings._Random.Next(5, 10)); // Sleep for 5-10 sec, while timer goes down.
+                        Thread.Sleep(1000 * Settings._Random.Next(5, 10)); // 5-10s sleep. 
                 }
             }
 

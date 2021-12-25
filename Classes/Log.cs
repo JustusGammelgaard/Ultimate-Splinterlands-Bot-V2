@@ -104,6 +104,11 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 //Print til csv
                 System.IO.File.AppendAllText(Settings.StartupPath + @"/championLog.txt", monsterName + ",");
             }
+
+            System.IO.File.AppendAllText(Settings.StartupPath + @"/summonerLog.txt", (string)team[$"summoner_id"] + ",");
+            System.IO.File.AppendAllText(Settings.StartupPath + @"/splinterLog.txt", (string)team[$"color"] + ",");
+
+
         }
 
         public static void LogTeamToTable(JToken team, int mana, string rulesets)

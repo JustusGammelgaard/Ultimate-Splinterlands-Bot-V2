@@ -2,6 +2,7 @@
 using OpenQA.Selenium.Chrome;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
@@ -68,6 +69,8 @@ namespace Ultimate_Splinterlands_Bot_V2
         public CardsToTrade cardInfos;
         private string activationkey;
         private string TRANSFER_LOG = "transfer_log.txt";
+        private ReadOnlyCollection<Cookie> cookies;
+
 
         public HTMLTransferCards(string username, string postingkey, string activationkey, CardsToTrade cardInfos)
         {
@@ -86,7 +89,7 @@ namespace Ultimate_Splinterlands_Bot_V2
             {
                 double botECR = await bot.GetECRFromAPIAsync();
 
-                if (botECR > maxECR && botECR >= Settings.ECRThreshold)
+                if (botECR > maxECR && botECR >= Settings.ECRThreshold + 5) // + 5, dont wanna just trade cards for no reason.
                 {
                     maxECR = botECR;
                     maxBot = Settings.BotInstancesBlockchain.IndexOf(bot);
@@ -98,20 +101,33 @@ namespace Ultimate_Splinterlands_Bot_V2
 
         private static IWebDriver SetDriver()
         {
+            Log.WriteToLog("Starting transfer of cards ... ");
             var options = new ChromeOptions();
-            options.AddArgument("--start-maximized");
             options.AddArgument("--disable-notifications");
+            options.AddArgument("--mute-audio");
+            options.AddArgument("--window-size=1920,1080");
+            options.AddArgument("--ignore-certificate-errors");
+
+
+            // options.AddArgument("--headless");
+
 
             var driver = new ChromeDriver(Environment.CurrentDirectory, options);
 
             return driver;
         }
 
-        private void Login()
+        // Testing method - use if crashes happen (screen shots the headless chrome screen).
+        public void ScreenShot(string outfile = "driverscreenshot.png")
+        {
+            Screenshot ss = ((ITakesScreenshot)driver).GetScreenshot();
+            ss.SaveAsFile("driverscreenshot.png", ScreenshotImageFormat.Png);
+        }
+
+        public void LoginForTrade()
         {
             driver = SetDriver();
-            Thread.Sleep(2500);
-            driver.Navigate().GoToUrl("https://www.splinterlands.com/"); // Go to splinterlands
+            driver.Navigate().GoToUrl("https://splinterlands.com/?p=card_details&id=331&gold=false&edition=3&tab="); // Goto some random card.
             Thread.Sleep(5000); // Sleep for page to load
             driver.FindElement(By.Id("log_in_button")).Click(); // Press login
             Thread.Sleep(3000); // Wait for login screen
@@ -127,6 +143,8 @@ namespace Ultimate_Splinterlands_Bot_V2
 
             driver.FindElement(By.XPath("//button[@name='loginBtn' and @class='btn btn-primary btn-lg']")).Click(); // Press login
             Thread.Sleep(5000);
+
+
         }
 
         private void RemovePopups()
@@ -145,7 +163,10 @@ namespace Ultimate_Splinterlands_Bot_V2
         private void GoToTradeURL(string cardGenericID, bool golden, string edition)
         {
             driver.Navigate().GoToUrl("https://splinterlands.com/?p=card_details&id=" + cardGenericID + "&gold=" + golden.ToString().ToLower() + "&edition=" + edition + "&tab="); // Goto card exchange
-            Thread.Sleep(8000);
+            Thread.Sleep(5000);
+
+
+
         }
 
         // Assumes that we are at the correct URL.
@@ -171,14 +192,33 @@ namespace Ultimate_Splinterlands_Bot_V2
         }
 
         // toUser = recipient username.
-        public bool TradeAllCards(string toUser)
+        public async Task<bool> TradeAllCardsAsync(string toUser)
         {
             try
             {
 
-                Login();
 
-                foreach (CardInfo CI in cardInfos.AllCards)
+                var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync(this.username, false, false);
+
+                // These cards should be transfered.
+                var mustBeTransfered = new List<CardInfo>();
+
+
+                foreach (var c in cardInfos.AllCards)
+                {
+                    if (CardsCached.Where(cachedcard => cachedcard.card_long_id == c.UUID).Count() > 0)
+                        mustBeTransfered.Add(c);
+                }
+
+                if (mustBeTransfered.Count == 0)
+                {
+                    File.AppendAllText(TRANSFER_LOG, "No cards could be traded." + Environment.NewLine);
+                    return true;
+                }
+                LoginForTrade();
+                RemovePopups();
+
+                foreach (CardInfo CI in mustBeTransfered)
                 {
                     GoToTradeURL(CI.GenericID, CI.Golden, CI.edition);
                     RemovePopups();
@@ -198,6 +238,12 @@ namespace Ultimate_Splinterlands_Bot_V2
             catch (Exception ex)
             {
                 File.AppendAllText(TRANSFER_LOG, "Error in transfer from: " + username + " to: " + toUser + ". Error code: " + ex.ToString() + Environment.NewLine);
+                try
+                {
+                    Logout();
+                }
+                catch { }
+
                 return false;
             }
 
@@ -225,7 +271,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                     this.activationkey = botinfo.ActiveKey;
 
                     // Gets all cards of an account
-                    var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync(this.username, false);
+                    var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync(this.username, false, false);
 
                     // These cards should be transfered back to master
                     var mustBeTransfered = new List<CardInfo>();
@@ -241,8 +287,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                     // No cards should be transfered.
                     if (mustBeTransfered.Count() == 0) continue;
 
-                    Login();
-
+                    LoginForTrade();
                     foreach (CardInfo CI in mustBeTransfered)
                     {
                         GoToTradeURL(CI.GenericID, CI.Golden, CI.edition);
@@ -268,14 +313,23 @@ namespace Ultimate_Splinterlands_Bot_V2
             catch (Exception ex)
             {
                 File.AppendAllText(TRANSFER_LOG, "Failure in transfering cards to master. Error: " + ex.ToString() + Environment.NewLine);
+
+                try
+                {
+                    Logout();
+                }
+                catch { }
+
                 return false;
             }
 
         }
 
 
-        private void Logout()
+        public void Logout()
         {
+            Log.WriteToLog("Cards transfered.");
+
             driver.Quit();
         }
 
