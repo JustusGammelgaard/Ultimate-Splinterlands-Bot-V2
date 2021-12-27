@@ -102,15 +102,37 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         }
         public static string GetRandomUsername()
         {
-            var randomUsernames = new List<string> { "nnats", "crom228", "crom229", "crom230", "camap802","phuc588","phuc430","phuc456", "vindicator",
-                                                    "breadtime", "ggez", "kama533", "potatokiller", "cleaninglady", "frodo", "zonsan62", "zonsan70",
-                                                    "crom145", "crom315", "crom221", "crom548", "crom781", "omun021", "omun312", "lazking501", "lazking502", "lazking351",
-                                                    "qhunter011", "qhunter015"};
+            var randomUsernames = new List<string> { "xala949", "adai382", "soendergod", "lort321", "erdossplinter", "diracsplinter",
+                                                      "dye2r", "xala940", "xala939", "xala938","xala937","xala935","xala933","xala921"
+                                                            ,"xala922","xala923","xala924","xala925","xala926","xala927"};
 
             return randomUsernames[random.Next(0, randomUsernames.Count - 1)];
         }
 
 
+        public static async Task TestItTwoAsync()
+        {
+            var splinters = new List<string> { "earth", "life", "death", "dragon", "water", "fire" };
+            var manas = new List<int> { 14, 15, 18,19, 20, 21, 22, 23, 24,26, 28, 29, 33, 35, 39, 45, 99 };
+            int j = 0;
+            while (splinters.Count > 0)
+            {
+
+                for (int i = 0; i < manas.Count(); i++)
+                {
+                    var username = GetRandomUsername();
+                    var CardsCached = await SplinterlandsAPI.GetPlayerCardsAsync(username);
+                    var QuestCached = await SplinterlandsAPI.GetPlayerQuestAsync(username);
+                    var qq = QuestCached.ToString();
+                    var APIResponse = await BattleAPI.GetTeamFromAPIAsync(manas[i], "Standard", splinters.ToArray(), CardsCached, QuestCached.quest, QuestCached.questLessDetails, username);
+                    j++;
+                }
+                splinters.Remove(splinters[0]);
+            }
+        }
 
     }
+
+
+    
 }

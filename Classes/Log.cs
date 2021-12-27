@@ -27,7 +27,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         /// </summary>
         /// <param name="Message">The text to write to the log</param>
         /// <param name="logType">1 = Success / Green, 2 = Information / Default Color, 3 = Error / Red, 4 = Critical Error / DarkViolet, 5 = Warning / Orange, default = Default Color</param>
-        public static void WriteToLog(string message, LogType logType = LogType.Information, bool debugOnly = false)
+        public static void WriteToLog(string message, LogType logType = LogType.Information, bool debugOnly = false, string logFile = @"/log.txt")
         {
             if (debugOnly && !Settings.DebugMode)
             {
@@ -69,7 +69,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
                 if (Settings.WriteLogToFile)
                 {
-                    System.IO.File.AppendAllText(Settings.StartupPath + @"/log.txt", messagePrefix + message + Environment.NewLine);
+                    System.IO.File.AppendAllText(Settings.StartupPath + logFile, messagePrefix + message + Environment.NewLine);
                 }
             }
         }

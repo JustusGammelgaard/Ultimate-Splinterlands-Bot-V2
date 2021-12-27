@@ -1,0 +1,50 @@
+[27-12-2021 11:13:50] Trading all cards from accounts to master...
+
+[27-12-2021 11:14:46] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 11:15:23] Carded trade from: erdossplinter to: soendergod. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 11:16:04] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 11:16:45] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 11:16:46] All cards traded to master.
+
+[27-12-2021 11:21:53] Carded trade from: soendergod to: eulersplinter. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 11:22:33] Carded trade from: soendergod to: eulersplinter. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 11:23:12] Carded trade from: soendergod to: eulersplinter. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 11:23:51] Carded trade from: soendergod to: eulersplinter. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 11:23:51] Succesful traded all cards, from: soendergod to: eulersplinter.
+
+[27-12-2021 12:13:31] Trading all cards from accounts to master...
+
+[27-12-2021 12:14:28] Carded trade from: eulersplinter to: soendergod. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 12:15:08] Carded trade from: eulersplinter to: soendergod. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 12:15:46] Carded trade from: eulersplinter to: soendergod. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 12:16:25] Carded trade from: eulersplinter to: soendergod. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 12:16:25] All cards traded to master.
+
+[27-12-2021 12:19:24] Carded trade from: soendergod to: oresplinter. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 12:20:04] Carded trade from: soendergod to: oresplinter. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 12:20:41] Carded trade from: soendergod to: oresplinter. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 12:21:10] Trading all cards from accounts to master...
+
+[27-12-2021 12:22:05] Carded trade from: oresplinter to: soendergod. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 12:22:44] Carded trade from: oresplinter to: soendergod. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 12:23:23] Carded trade from: oresplinter to: soendergod. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 12:23:24] All cards traded to master.
+

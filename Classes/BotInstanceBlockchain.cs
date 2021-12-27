@@ -453,6 +453,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                         Settings.RentalBotMethodSetActive.Invoke(Settings.RentalBot.Unwrap(), new object[] { false });
                     }
                 }
+                ECRCached = await GetECRFromAPIAsync();
 
                 APICounter++;
                 if ((Settings.LegacyWindowsMode && APICounter >= 6) || APICounter >= 10 || (DateTime.Now - LastCacheUpdate).TotalMinutes >= 50)
@@ -466,7 +467,6 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                     {
                         BattleAPI.UpdateCardsForPrivateAPI(Username, CardsCached);
                     }
-                    ECRCached = await GetECRFromAPIAsync();
                 }
 
                 LogSummary.Rating = RatingCached.ToString();

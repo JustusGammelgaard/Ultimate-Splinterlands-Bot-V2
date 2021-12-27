@@ -60,7 +60,7 @@ namespace Ultimate_Splinterlands_Bot_V2
             CancellationToken token = cancellationTokenSource.Token;
 
 
-            //await tester.testitAsync();
+            //await tester.TestItTwoAsync();
 
 
 

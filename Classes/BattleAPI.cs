@@ -207,7 +207,16 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         {
             using (var content = new StringContent(JsonConvert.SerializeObject(json), Encoding.UTF8, "application/json"))
             {
-                HttpResponseMessage result = await Settings._httpClient.PostAsync(url, content);
+                string myContent = await content.ReadAsStringAsync();
+                //HttpResponseMessage result = await Settings._httpClient.PostAsync(url, content);
+                HttpResponseMessage result;
+                using (var client = new HttpClient())
+                {
+                    var bb =  client.DefaultRequestHeaders;
+                    var qq = await content.ReadAsStringAsync();
+                    result = await client.PostAsync(url, content);
+                }
+
                 if (result.StatusCode == System.Net.HttpStatusCode.OK)
                 {
                     string returnValue = await result.Content.ReadAsStringAsync();
