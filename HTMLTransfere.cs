@@ -104,13 +104,18 @@ namespace Ultimate_Splinterlands_Bot_V2
             var options = new ChromeOptions();
             options.AddArgument("--disable-notifications");
             options.AddArgument("--mute-audio");
-            options.AddArgument("--window-size=1920,1080"); // Important for headless mode
-            options.AddArgument("--ignore-certificate-errors"); // Important for headless mode
             options.AddArgument("--log-level=3");
 
 
+            options.AddArgument("--window-size=1920,1080"); // Important for headless mode
+            options.AddArgument("--ignore-certificate-errors"); // Important for headless mode
 
             options.AddArgument("--headless"); // Does not start UI
+            options.AddArgument("--disable-dev-shm-usage");
+            options.AddArgument("--no-sandbox");
+            options.AddArgument("--remote-debugging-port=9222");
+
+
 
 
             var driver = new ChromeDriver(Environment.CurrentDirectory, options);

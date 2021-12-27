@@ -48,3 +48,49 @@
 
 [27-12-2021 12:23:24] All cards traded to master.
 
+[27-12-2021 13:24:25] Trading all cards from accounts to master...
+
+[27-12-2021 13:24:27] All cards traded to master.
+
+[27-12-2021 13:25:23] Carded trade from: soendergod to: oresplinter. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 13:26:00] Carded trade from: soendergod to: oresplinter. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 13:26:37] Carded trade from: soendergod to: oresplinter. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 13:27:15] Carded trade from: soendergod to: oresplinter. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 13:27:15] Succesful traded all cards, from: soendergod to: oresplinter.
+
+[27-12-2021 14:03:28] Carded trade from: oresplinter to: erdossplinter. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 14:04:09] Carded trade from: oresplinter to: erdossplinter. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 14:04:50] Carded trade from: oresplinter to: erdossplinter. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 14:05:29] Carded trade from: oresplinter to: erdossplinter. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 14:05:29] Succesful traded all cards, from: oresplinter to: erdossplinter.
+
+[27-12-2021 16:20:59] Trading all cards from accounts to master...
+
+[27-12-2021 16:21:59] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 16:22:38] Carded trade from: erdossplinter to: soendergod. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 16:23:18] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-340-6Q1K24BZ74
+
+[27-12-2021 16:23:58] Carded trade from: erdossplinter to: soendergod. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 16:23:58] All cards traded to master.
+
+[27-12-2021 16:57:27] Trading all cards from accounts to master...
+
+[27-12-2021 16:57:29] All cards traded to master.
+
+[27-12-2021 16:58:27] Carded trade from: soendergod to: erdossplinter. Card UUID: C3-331-CICWRBD3E8
+
+[27-12-2021 16:59:05] Carded trade from: soendergod to: erdossplinter. Card UUID: C7-395-7K3KI4TTG0
+
+[27-12-2021 16:59:43] Carded trade from: soendergod to: erdossplinter. Card UUID: C3-340-6Q1K24BZ74
+

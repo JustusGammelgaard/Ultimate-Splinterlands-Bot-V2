@@ -40,7 +40,6 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
         private static async Task<JToken> GetTeamFromPublicAPIAsync(int mana, string rules, string[] splinters, Card[] cards, JToken quest, JToken questLessDetails, string username, bool secondTry = false)
         {
-            string userNameFake = GetRandomUsername();
 
             Log.WriteToLog($"{username}: rules are: " + rules);
 
@@ -59,7 +58,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
                 string urlGetTeam = $"{Settings.PublicAPIUrl}get_team/";
                 string urlGetTeamByHash = $"{Settings.PublicAPIUrl}get_team_by_hash/";
-                string APIResponse = await PostJSONToApi(matchDetails, urlGetTeam, userNameFake);
+                string APIResponse = await PostJSONToApi(matchDetails, urlGetTeam, username);
                 int counter = 0;
                 do
                 {
@@ -69,7 +68,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                         Log.WriteToLog($"{username}: Waiting 10 seconds for API to calculate team...");
                         await Task.Delay(10 * 1000);
                         JObject hashData = new JObject(new JProperty("hash", APIResponse.Split(":")[1]));
-                        APIResponse = await PostJSONToApi(hashData, urlGetTeamByHash, userNameFake);
+                        APIResponse = await PostJSONToApi(hashData, urlGetTeamByHash, username);
                     }
                     else
                     {
@@ -83,14 +82,14 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                     {
                         Log.WriteToLog($"{username}: API Overloaded! Waiting 25 seconds and trying again after...", Log.LogType.Warning);
                         System.Threading.Thread.Sleep(25000);
-                        return await GetTeamFromPublicAPIAsync(mana, rules, splinters, cards, quest, questLessDetails, userNameFake, true);
+                        return await GetTeamFromPublicAPIAsync(mana, rules, splinters, cards, quest, questLessDetails, username, true);
                     }
                     else
                     {
                         var sw = new Stopwatch();
                         sw.Start();
                         Log.WriteToLog($"{username}: API Rate Limit reached! Waiting until no longer blocked...", Log.LogType.Warning);
-                        await CheckRateLimitLoopAsync(userNameFake, Settings.PublicAPIUrl);
+                        await CheckRateLimitLoopAsync(username, Settings.PublicAPIUrl);
                         sw.Stop();
                         // return null so team doesn't get submitted
                         if (sw.Elapsed.TotalSeconds > 200)
