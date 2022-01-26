@@ -28,9 +28,9 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         public string ActiveKey { get; init; } // only needed for plugins, not used by normal bot
         private string AccessToken { get; init; } // used for websocket authentication
         private int APICounter { get; set; }
-        private int PowerCached { get; set; }
-        private int LeagueCached { get; set; }
-        private int RatingCached { get; set; }
+        public int PowerCached { get; set; }
+        public int LeagueCached { get; set; }
+        public int RatingCached { get; set; }
         public double ECRCached { get; set; }
         private (JToken Quest, JToken QuestLessDetails) QuestCached { get; set; }
         private Card[] CardsCached { get; set; }
@@ -144,7 +144,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             wsClient.Send(message);
         }
 
-        private COperations.custom_json CreateCustomJson(bool activeKey, bool postingKey, string methodName, string json)
+        public COperations.custom_json CreateCustomJson(bool activeKey, bool postingKey, string methodName, string json)
         {
             COperations.custom_json customJsonOperation = new COperations.custom_json
             {
@@ -367,7 +367,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 return "";
             }
         }
-        public BotInstanceBlockchain(string username, string password, string accessToken, int index, string activeKey = "5JMZoD5KJMRgaQonDp9zDVL2QwdJpYzL6wKTcWUMjLpCAuJh6zg")
+        public BotInstanceBlockchain(string username, string password, string accessToken, int index, string activeKey = "")
         {
             hasCards = false;
             Username = username;
@@ -634,7 +634,8 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return SleepUntil;
         }
 
-        private async Task ClaimSeasonReward()
+
+        public async Task ClaimSeasonReward()
         {
             try
             {
@@ -970,6 +971,8 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
         }
 
+       
+
         public async Task<double> GetECRFromAPIAsync()
         {
             var balanceInfo = ((JArray)await SplinterlandsAPI.GetPlayerBalancesAsync(Username)).Where(x => (string)x["token"] == "ECR").First();
@@ -981,7 +984,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return Math.Min(ecr, 10000) / 100;
         }
 
-        private async Task AdvanceLeague()
+        public async Task AdvanceLeague()
         {
             try
             {
@@ -1001,10 +1004,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                     COperations.custom_json custom_Json = CreateCustomJson(false, true, "sm_advance_league", json);
                     CtransactionData oTransaction = Settings.oHived.CreateTransaction(new object[] { custom_Json }, new string[] { PostingKey });
                     string tx = Settings.oHived.broadcast_transaction(new object[] { custom_Json }, new string[] { PostingKey });
-                    //var postData = GetStringForSplinterlandsAPI(oTransaction);
-                    //string response = HttpWebRequest.WebRequestPost(Settings.CookieContainer, postData, Settings.SPLINTERLANDS_BROADCAST_URL, "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "https://splinterlands.com/", Encoding.UTF8);
 
-                    //string tx = Helper.DoQuickRegex("id\":\"(.*?)\"", response);
                     if (await WaitForTransactionSuccess(tx, 45))
                     {
                         Log.WriteToLog($"{Username}: { "Advanced league: ".Pastel(Color.Green) } {tx}");
@@ -1107,17 +1107,65 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return 0;
         }
 
-
         public async Task TransferCards(string toUsername, List<string> cardIDs)
         {
-            string n = Helper.GenerateRandomString(10);
-            string json = "{\"to\":\""+ toUsername + "\",\"cards\":[\"C3-338-2NJ2K74260\"],\"app\":\"" + Settings.SPLINTERLANDS_APP + "\",\"n\":\"" + n + "\"}";
-            COperations.custom_json custom_Json = CreateCustomJson(true, false, "sm_gift_cards", json);
 
-            CtransactionData oTransaction = Settings.oHived.CreateTransaction(new object[] { custom_Json }, new string[] { ActiveKey });
-            var postData = GetStringForSplinterlandsAPI(oTransaction);
-            var res = HttpWebRequest.WebRequestPost(Settings.CookieContainer, postData, "https://battle.splinterlands.com/battle/battle_tx", "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:93.0) Gecko/20100101 Firefox/93.0", "", Encoding.UTF8);
-                
+            string cardIDString = "";
+
+            foreach(string cardid in cardIDs)
+                cardIDString += "\"" + cardid + "\"" + ",";
+
+
+            cardIDString = cardIDString.Remove(cardIDString.Length - 1);
+
+            string n = Helper.GenerateRandomString(10);
+            string json = "{\"to\": \"" + toUsername + "\",\"cards\" :[" + cardIDString + "],\"app\":\"" + Settings.SPLINTERLANDS_APP + "\",\"n\":\"" + n + "\"}";
+            
+            
+            COperations.custom_json custom_Json = CreateCustomJson(true, false, "sm_gift_cards", json);
+            string tx = Settings.oHived.broadcast_transaction(new object[] { custom_Json }, new string[] { ActiveKey });
+
         }
+
+        public async Task SendDEC(string toUser, double DECAmount)
+        {
+
+            string n = Helper.GenerateRandomString(10);
+            string sendAmn = DECAmount.ToString(System.Globalization.CultureInfo.InvariantCulture); //Avoid rounding errors.
+
+            string json = "{\"to\": \"" + toUser + "\",\"qty\":" + sendAmn + ",\"token\":\"DEC\",\"type\":\"withdraw\",\"memo\":\"" + toUser + "\",\"app\":\"" + Settings.SPLINTERLANDS_APP + "\",\"n\":\"" + n + "\"}";
+            
+            COperations.custom_json custom_Json = CreateCustomJson(true, false, "sm_token_transfer", json);
+            string tx = Settings.oHived.broadcast_transaction(new object[] { custom_Json }, new string[] { ActiveKey });
+        }
+
+        public async Task<double> GetDECFromAPIAsync()
+        {
+            try
+            {
+                var INFO = ((JArray)await SplinterlandsAPI.GetPlayerBalancesAsync(Username));
+
+                if (!INFO.Any(x => (string)x["token"] == "DEC"))
+                {
+                    Log.WriteToLog("The bot does not hold any DEC, username: " + Username);
+                    return -1;
+                }
+                    
+
+                var DECInfo = INFO.Where(x => (string)x["token"] == "DEC").First();
+                var DEC = (double)DECInfo["balance"];
+                return DEC;
+            }
+            catch (Exception ex)
+            {
+                Log.WriteToLog("Error getting DEC from: " + Username + " error: " + ex.ToString());
+                return -1;
+            }
+
+        }
+
+
+
+
     }
 }

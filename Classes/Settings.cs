@@ -15,6 +15,21 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 {
     public static class Settings
     {
+        public struct AccInfo{
+            public string Username { get; set; }
+            public string ActivationKey { get; set; }
+            public string PrivateKey { get; set; }
+            
+            public AccInfo(string Name, string PK, string AK)
+            {
+                this.ActivationKey = AK;
+                this.Username = Name;
+                this.PrivateKey = PK;
+            }
+
+        }
+
+        public const string POWER_STICK_CONFIG = "config/cards_to_trade.txt";
         public const string HIVE_NODE = "https://api.deathwing.me/";
         public const string SPLINTERLANDS_API_URL = "https://api2.splinterlands.com";
         public const string SPLINTERLANDS_API_URL_FALLBACK = "https://game-api.splinterlands.io";
@@ -59,6 +74,8 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         public static int SleepBetweenBattles = 30;
         public static int ECRThreshold = 75;
         public static string[] BadQuests = Array.Empty<string>();
+        public static int DECDelegateAmount = 0;
+        public static AccInfo MasterAccount;
 
         public static string RentalBotDllPath = "";
         public static bool RentalBotActivated = false;
@@ -72,6 +89,8 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
 
         public static bool RateLimited = false;
         public static object RateLimitedLock = new object();
+
+        public static List<Card> PowerStickCards;
         public static List<BotInstanceBrowser> BotInstancesBrowser { get; set; }
         public static List<BotInstanceBlockchain> BotInstancesBlockchain { get; set; }
         public static List<(IWebDriver driver, bool isAvailable)> SeleniumInstances { get; set; }

@@ -94,3 +94,7 @@
 
 [27-12-2021 16:59:43] Carded trade from: soendergod to: erdossplinter. Card UUID: C3-340-6Q1K24BZ74
 
+[27-12-2021 17:00:23] Carded trade from: soendergod to: erdossplinter. Card UUID: C3-349-CHDF72J9XC
+
+[27-12-2021 17:00:23] Succesful traded all cards, from: soendergod to: erdossplinter.
+

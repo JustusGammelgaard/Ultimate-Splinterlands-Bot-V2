@@ -5,3 +5,7 @@ erdossplinter:028JIHJBHS
 diracsplinter:2XW0FI0HPC
 oresplinter:YX9UI7DQDS
 eulersplinter:VI6DAI6FN4
+hamiltonsplinter:C33RI7F5V4
+kempesplinter:NRVX9JTTBK
+petersensplinter:OWZU8HD9MO
+turansplinter:UAZZNZGZ1C

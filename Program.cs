@@ -32,13 +32,12 @@ namespace Ultimate_Splinterlands_Bot_V2
                 }
             }
 
-            Log.WriteStartupInfoToLog();
             SetStartupPath();
 
             // We have to configure the http client early because it might be used in account constructor
             Settings._httpClient.Timeout = new TimeSpan(0, 2, 15);
 
-            if (!ReadConfig() || (Settings.BrowserMode && !CheckForChromeDriver()) || !ReadAccounts())
+            if (!ReadConfig() || (Settings.BrowserMode && !CheckForChromeDriver()) || !ReadAccounts() || !ReadTransferConfig() || !ReadMasterAccount())
             {
                 Log.WriteToLog("Press any key to close");
                 Console.ReadKey();
@@ -55,23 +54,66 @@ namespace Ultimate_Splinterlands_Bot_V2
             Thread.Sleep(1500); // Sleep 1.5 seconds to read config and welcome message
 
             Initialize();
+            await tester.TestRent(Settings.BotInstancesBlockchain[1]);
 
-            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
-            CancellationToken token = cancellationTokenSource.Token;
+            // await tester.TestItTwoAsync();
+
+            if (args.Count() == 0)
+                Log.Help();
+
+            foreach(string arg in args)
+            {
+                switch (arg)
+                {
+                    case "-battle":
+                        await BotLoopTransfer();
+                        break;
+                    case "-battle_EOS":
+                        await BotLoopEOS();
+                        break;
+                    case "-t_global":
+                        await BlockchainSaticMethods.TransferRewardsToGlobalMaster();
+                        break;
+                    case "-t_all_cards":
+                        await BlockchainSaticMethods.TransferAllCardsToMaster();
+                        break;
+                    case "-t_rew_cards":
+                        await BlockchainSaticMethods.TransferRewardCardsToMaster();
+                        break;
+                    case "-claim":
+                        await BlockchainSaticMethods.ClaimSeasonRewardsAll();
+                        break;
+                    case "-t_DEC":
+                        await BlockchainSaticMethods.SendAllDEC();
+                        break;
+                    case "-overview":
+                        await BlockchainSaticMethods.GetOverview();
+                        break;
+                    case "-advance":
+                        await BlockchainSaticMethods.AdvanceAllLeauges();
+                        break;
+                    case "-d_DEC":
+                        await BlockchainSaticMethods.DelegateDECToAll(Settings.DECDelegateAmount);
+                        break;
+                    default:
+                        Log.Help();
+                        break;
+                }
+
+            }
 
 
-            //await tester.TestItTwoAsync();
+
+            // await TransferCardsBlockchain.TransferAllCardsToMaster();
 
 
-
-            await BotLoopTransfer(token);
-           
         }
 
-        static async Task BotLoopTransfer(CancellationToken token)
+        static async Task BotLoopTransfer()
         {
+            int battleCrashes = 0;
 
-            while (!token.IsCancellationRequested) // basically while(true)
+            while (true) 
             {
                 bool transferSuccess = true;
                 var timer = DateTime.Now;
@@ -81,13 +123,12 @@ namespace Ultimate_Splinterlands_Bot_V2
                 // On start up and every 12 hours, a check is performed.
                 // Master receives all cards, and the process starts with the master.
                 // If a transfer fails, this is called (so all cards can be returned)
-                var transfere = new HTMLTransferCards(null, null, null, new CardsToTrade());
 
                 bool masterTransfered = false;
                 int masterTransferFailures = 0;
                 while (!masterTransfered)
                 {
-                    masterTransfered = await transfere.SendCardsToMasterAsync();
+                    masterTransfered = await BlockchainSaticMethods.TransferAllPowerSticksMasterAsync();
 
                     if (masterTransfered) break;
 
@@ -109,11 +150,31 @@ namespace Ultimate_Splinterlands_Bot_V2
                         Thread.Sleep(3 * 60000);
                     }
 
+                    // Battle!
+                    try
+                    {
+                        var result = await Settings.BotInstancesBlockchain[currentBot].DoBattleAsync(0, false, currentBot);
+                        Log.LogBattleSummaryToTable();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteToLog("Error in battle: " + ex.ToString());
+                        Log.WriteToLog("Sleeping for 10 min");
+                        Thread.Sleep(1000 * 60 * 10);
+                        battleCrashes++;
+
+                        if (battleCrashes > 5)
+                            Environment.Exit(100);
+                        continue;
+                    }
+
+
+
                     double ECRCached = await Settings.BotInstancesBlockchain[currentBot].GetECRFromAPIAsync();
                     if (ECRCached < Settings.ECRThreshold)
                     {
                         // Transfer cards to acc with most ECR. If all have below threshold, sleep for a long time. 
-                        var newBot = await HTMLTransferCards.FindAccWithMaxECRAsync();
+                        var newBot = await BlockchainSaticMethods.FindAccWithMaxECRAsync();
                         // No bots have more than threshold
                         if (newBot == -1)
                         {
@@ -123,11 +184,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                         else if (newBot == currentBot) ; // pass - something weird happened.
                         else
                         {
-                            var botinfo = Settings.BotInstancesBlockchain[currentBot];
-                            transfere = new HTMLTransferCards(botinfo.Username, botinfo.PostingKey, botinfo.ActiveKey, new CardsToTrade());
-                            transferSuccess = await transfere.TradeAllCardsAsync(Settings.BotInstancesBlockchain[newBot].Username);
-                            Settings.BotInstancesBlockchain[currentBot].hasCards = false;
-                            Settings.BotInstancesBlockchain[newBot].hasCards = true;
+                            transferSuccess = await BlockchainSaticMethods.TransferPowerSticksAsync(Settings.BotInstancesBlockchain[newBot].Username, Settings.BotInstancesBlockchain[currentBot]);
 
                             currentBot = newBot;
 
@@ -135,10 +192,7 @@ namespace Ultimate_Splinterlands_Bot_V2
                         continue;
                     }
 
-                    var result = await Settings.BotInstancesBlockchain[currentBot].DoBattleAsync(0, false, currentBot);
-                    Log.LogBattleSummaryToTable();
-
-                    
+                   
                     while (Settings.BotInstancesBlockchain[currentBot].SleepUntil > DateTime.Now)
                         Thread.Sleep(1000 * Settings._Random.Next(5, 10)); // 5-10s sleep. 
                 }
@@ -146,149 +200,117 @@ namespace Ultimate_Splinterlands_Bot_V2
 
         }
 
-
-        static async Task BotLoopAsync(CancellationToken token)
+        static async Task BotLoopEOS()
         {
-            var instances = new HashSet<Task>();
-            int nextBrowserInstance = -1;
-            int nextBotInstance = -1;
-            bool firstRuntrough = true;
-            int botInstance = 0;
+            int battleCrashes = 0;
 
-            bool logoutNeeded = Settings.BrowserMode ? Settings.BotInstancesBrowser.Count != Settings.MaxBrowserInstances : false;
-
-            DateTime[] sleepInfo = new DateTime[Settings.LightningMode ? Settings.BotInstancesBlockchain.Count : Settings.BotInstancesBrowser.Count];
-
-            while (!token.IsCancellationRequested)
+            while (true)
             {
-                while (instances.Count < (Settings.BrowserMode ? Settings.MaxBrowserInstances : Settings.Threads) && !token.IsCancellationRequested)
+                bool transferSuccess = true;
+                var timer = DateTime.Now;
+                int currentBot = 0;
+                Settings.BotInstancesBlockchain[0].hasCards = true;
+
+
+                bool masterTransfered = false;
+                int masterTransferFailures = 0;
+                while (!masterTransfered)
                 {
-                    try
+                    masterTransfered = await BlockchainSaticMethods.TransferAllPowerSticksMasterAsync();
+
+                    if (masterTransfered) break;
+
+                    Thread.Sleep(1000 * 60 * 10); //10 min sleep
+                    masterTransferFailures += 1;
+
+                    if (masterTransferFailures >= 10)
                     {
-                        lock (_TaskLock)
-                        {
-                            if ((nextBotInstance++) >= (Settings.LightningMode ? Settings.BotInstancesBlockchain.Count : Settings.BotInstancesBrowser.Count))
-                            {
-                                firstRuntrough = false;
-                                Log.LogBattleSummaryToTable();
-                                Thread.Sleep(5000);
-                                nextBotInstance = 0;
-                                while (SplinterlandsAPI.CheckForMaintenance().Result)
-                                {
-                                    Log.WriteToLog("Splinterlands maintenance - waiting 3 minutes");
-                                    Thread.Sleep(3 * 60000);
-                                }
-                            }
-
-                            if (Settings.LightningMode)
-                            {
-                                while (Settings.BotInstancesBlockchain.All(x => x.CurrentlyActive
-                                    || (DateTime)sleepInfo[Settings.BotInstancesBlockchain.IndexOf(x)] > DateTime.Now))
-                                {
-                                    Thread.Sleep(20000);
-                                }
-                            }
-                            else
-                            {
-                                while (Settings.BotInstancesBrowser.All(x => x.CurrentlyActive
-                                    || (DateTime)sleepInfo[Settings.BotInstancesBrowser.IndexOf(x)] > DateTime.Now))
-                                {
-                                    Thread.Sleep(20000);
-                                }
-                            }
-                        }
-
-                        lock (_TaskLock)
-                        {
-                            if (firstRuntrough && !Settings.ClaimSeasonReward)
-                            {
-                                // Delay accounts to avoid them fighting each other
-                                Thread.Sleep(Settings._Random.Next(1000, 6000));
-                            }
-
-                            if (Settings.LightningMode)
-                            {
-                                // Finder første frie bot (der ikke spilles)
-                                while (Settings.BotInstancesBlockchain.ElementAt(nextBotInstance).CurrentlyActive)
-                                {
-                                   nextBotInstance++;
-                                   nextBotInstance = nextBotInstance >= Settings.BotInstancesBlockchain.Count ? 0 : nextBotInstance;
-                                }
-                                // create local copies for thread safety
-
-
-
-
-                                botInstance = nextBotInstance; // Brug denne her til at styre hvilken bot der skal spille
-                                int browserInstance = nextBrowserInstance; // Ubrugt i Blockchain mode (altid -1)
-
-                                instances.Add(Task.Run(async () =>
-                                {
-                                    var result = await Settings.BotInstancesBlockchain[botInstance].DoBattleAsync(browserInstance, logoutNeeded, botInstance);
-                                    lock (_TaskLock)
-                                    {
-                                        sleepInfo[nextBotInstance] = result;
-                                    }
-                                }, CancellationToken.None));
-                            }
-                            else
-                            {
-                                while (Settings.BotInstancesBrowser.ElementAt(nextBotInstance).CurrentlyActive)
-                                {
-                                    nextBotInstance++;
-                                    nextBotInstance = nextBotInstance >= Settings.BotInstancesBrowser.Count ? 0 : nextBotInstance;
-                                }
-                                nextBrowserInstance = ++nextBrowserInstance >= Settings.MaxBrowserInstances ? 0 : nextBrowserInstance;
-                                while (!Settings.SeleniumInstances.ElementAt(nextBrowserInstance).isAvailable)
-                                {
-                                    nextBrowserInstance++;
-                                    nextBrowserInstance = nextBrowserInstance >= Settings.MaxBrowserInstances ? 0 : nextBrowserInstance;
-                                }
-
-                                Settings.SeleniumInstances[nextBrowserInstance] = (Settings.SeleniumInstances[nextBrowserInstance].driver, false);
-
-                                // create local copies for thread safety
-                                botInstance = nextBotInstance;
-                                int browserInstance = nextBrowserInstance;
-
-                                instances.Add(Task.Run(async () =>
-                                {
-                                    var result = await Settings.BotInstancesBrowser[botInstance].DoBattleAsync(browserInstance, logoutNeeded, botInstance);
-                                    lock (_TaskLock)
-                                    {
-                                        sleepInfo[nextBotInstance] = result.sleepTime;
-                                        Settings.SeleniumInstances[browserInstance] = (Settings.SeleniumInstances[browserInstance].driver, true);
-                                    }
-                                }, CancellationToken.None));
-                            }
-
-                        }
-
-                        double ECRCached = await Settings.BotInstancesBlockchain[botInstance].GetECRFromAPIAsync();
-                        if (ECRCached < Settings.ECRThreshold)
-                        {
-                            // Transfer kort + assign next bot
-                            nextBotInstance++;
-                            nextBotInstance = nextBotInstance >= Settings.BotInstancesBlockchain.Count ? 0 : nextBotInstance;
-                        }
-
-                    }
-                    catch (Exception ex)
-                    {
-                        Log.WriteToLog("BotLoop Error: " + ex.ToString(), Log.LogType.CriticalError);
+                        throw new Exception("Errors in master transfering.. Aborting.");
                     }
                 }
 
-                _ = await Task.WhenAny(instances);
-                instances.RemoveWhere(x => x.IsCompleted);
+                while ((DateTime.Now - timer).TotalHours < 12 && transferSuccess)
+                {
+
+                    while (SplinterlandsAPI.CheckForMaintenance().Result)
+                    {
+                        Log.WriteToLog("Splinterlands maintenance - waiting 3 minutes");
+                        Thread.Sleep(3 * 60000);
+                    }
+
+                    // Battle!
+                    try
+                    {
+                        var result = await Settings.BotInstancesBlockchain[currentBot].DoBattleAsync(0, false, currentBot);
+                        Log.LogBattleSummaryToTable();
+                    }
+                    catch (Exception ex)
+                    {
+                        Log.WriteToLog("Error in battle: " + ex.ToString());
+                        Log.WriteToLog("Sleeping for 10 min");
+                        Thread.Sleep(1000 * 60 * 10);
+                        battleCrashes++;
+
+                        if (battleCrashes > 5)
+                            Environment.Exit(100);
+                        continue;
+                    }
+
+
+
+                    double ECRCached = await Settings.BotInstancesBlockchain[currentBot].GetECRFromAPIAsync();
+                    (_, var RatingCached, _) = await SplinterlandsAPI.GetPlayerDetailsAsync(Settings.BotInstancesBlockchain[currentBot].Username);
+
+                    if (ECRCached < 40 || RatingCached > 1000)
+                    {
+                        var newBots = await BlockchainSaticMethods.FindAccsUnderThresholdAsync();
+
+                        if (newBots.Count == 0)
+                        {
+                            Log.WriteToLog("All accounts have 1K+ Rating. Stopping...");
+                            return;
+                        }
+
+                        // Find bot with max ECR
+                        double maxECR = -1;
+                        var newBot = -1;
+                        foreach(int b in newBots)
+                        {
+                            double ECR = await Settings.BotInstancesBlockchain[b].GetECRFromAPIAsync();
+                            
+                            if (ECR > maxECR)
+                            {
+                                maxECR = ECR;
+                                newBot = b;
+                            }
+                        }
+
+                        if (newBot == -1)
+                        {
+                            Log.WriteToLog("Could not find newBot...");
+                            return;
+                        }
+
+                        if(maxECR < 40)
+                        {
+                            Thread.Sleep(1000 * 60 * 20); //Bots need to play, but None has enough ECR.  
+                        }
+                        else if (newBot == currentBot) ; // pass - something weird happened.
+                        else
+                        {
+                            transferSuccess = await BlockchainSaticMethods.TransferPowerSticksAsync(Settings.BotInstancesBlockchain[newBot].Username, Settings.BotInstancesBlockchain[currentBot]);
+                            currentBot = newBot;
+
+                        }
+                        continue;
+                    }
+
+
+                    while (Settings.BotInstancesBlockchain[currentBot].SleepUntil > DateTime.Now)
+                        Thread.Sleep(1000 * Settings._Random.Next(5, 10)); // 5-10s sleep. 
+                }
             }
 
-            await Task.WhenAll(instances);
-            if (Settings.BrowserMode)
-            {
-                _ = Task.Run(() => Parallel.ForEach(Settings.SeleniumInstances, x => x.driver.Quit())).Result;
-            }
-            Log.WriteToLog("Bot stopped!");
         }
 
         static bool ReadConfig()
@@ -319,6 +341,9 @@ namespace Ultimate_Splinterlands_Bot_V2
                         break;
                     case "ECR_THRESHOLD":
                         Settings.ECRThreshold = Convert.ToInt32(temp[1]);
+                        break;
+                    case "DEC_DELEGATE_AMOUNT":
+                        Settings.DECDelegateAmount = Convert.ToInt32(temp[1]);
                         break;
                     // legacy:
                     case "ERC_THRESHOLD":
@@ -485,6 +510,31 @@ namespace Ultimate_Splinterlands_Bot_V2
             Settings.RentalBotMethodSetActive = moduleInstance.Unwrap().GetType().GetMethod("SetActive");
             Settings.RentalBotActivated = true;
         }
+
+
+
+        static bool ReadMasterAccount()
+        {
+            Log.WriteToLog("Reading master.txt...");
+            string filePathMasterAccount = Settings.StartupPath + @"/config/master.txt";
+            if (!File.Exists(filePathMasterAccount))
+            {
+                Log.WriteToLog("No master.txt in config folder.", Log.LogType.CriticalError);
+                return false;
+            }
+            var infos = File.ReadAllLines(filePathMasterAccount)[0].Split(":");
+
+            if (infos.Length != 3)
+            {
+                Log.WriteToLog("master.txt is formatted incorrectly, must be username:privatekey:activekey", Log.LogType.CriticalError);
+                return false;
+            }
+
+            Settings.MasterAccount = new Settings.AccInfo(infos[0], infos[1], infos[2]);
+
+            return true;
+        }
+
         static bool ReadAccounts()
         {
             Log.WriteToLog("Reading accounts.txt...");
@@ -667,6 +717,36 @@ namespace Ultimate_Splinterlands_Bot_V2
                 return false;
             }
 
+            return true;
+        }
+
+
+        static bool ReadTransferConfig()
+        {
+
+            if (!File.Exists(Settings.POWER_STICK_CONFIG))
+            {
+                Log.WriteToLog("Could not find file: cards_to_trade.txt");
+                return false;
+            }
+
+
+            var AllCards = new List<Card>();
+            var lines = File.ReadAllLines(Settings.POWER_STICK_CONFIG);
+
+            foreach (string line in lines)
+            {
+                var split = line.Split(":");
+                if (split.Length != 4)
+                {
+                    Log.WriteToLog("card_to_trade.txt contains an invalid line. Must be of type Card Generic ID : UUID : Golden : Edition");
+                    return false;
+                }
+                AllCards.Add(new Card(split[0], split[1], null, bool.Parse(split[2]), split[3]));
+
+            }
+
+            Settings.PowerStickCards = AllCards;
             return true;
         }
 

@@ -13,15 +13,19 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
         public string level { get; init; }
         public bool gold { get; init; }
 
+        public string edition { get; init; }
+
         [JsonIgnore]
         public string card_long_id { get; init; }
 
-        public Card(string cardId, string _card_long_id, string _level, bool _gold)
+        public Card(string cardId, string _card_long_id, string _level, bool _gold, string _edition = null)
         {
             card_detail_id = cardId;
             card_long_id = _card_long_id;
             level = _level;
             gold = _gold;
+            edition = _edition;
+
         }
 
         public int SortValue()

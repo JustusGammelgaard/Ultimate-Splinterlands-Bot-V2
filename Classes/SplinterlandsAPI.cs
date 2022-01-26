@@ -186,7 +186,7 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             return (null, null);
         }
 
-        public static async Task<Card[]> GetPlayerCardsAsync(string username, bool filterCards = true, bool removePowerSticks = true)
+        public static async Task<Card[]> GetPlayerCardsAsync(string username, bool filterCards = true, bool removePowerSticks = true, bool addBasic = true, bool removeRents = false)
         {
             try
             {
@@ -217,9 +217,12 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                     }
                     bool forSale = (string)card["market_listing_type"] == "RENT" ? false : card["market_listing_type"].Type != JTokenType.Null ? true : false;
 
+                    if (removeRents && (string)card["market_listing_type"] == "RENT")
+                        return false;
+
                     return currentUser == username && !cardOnCooldown && !forSale;
                 })
-                .Select(x => new Card((string)x["card_detail_id"], (string)x["uid"], (string)x["level"], (bool)x["gold"]))
+                .Select(x => new Card((string)x["card_detail_id"], (string)x["uid"], (string)x["level"], (bool)x["gold"], (string)x["edition"]))
                 .Distinct().OrderByDescending(x => x.SortValue()).ToArray());
 
                 //// lets hope nobody ever needs to touch this mess again
@@ -246,18 +249,21 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
                 // Remove cards, which must never be played:
                 if (removePowerSticks)
                 {
-                    var CIs = new CardsToTrade();
-                    foreach(var c in CIs.AllCards)
+                    var CIs = Settings.PowerStickCards;
+                    foreach(var c in CIs)
                     {
-                        cards.RemoveAll(x => x.card_long_id == c.UUID);
+                        cards.RemoveAll(x => x.card_long_id == c.card_long_id);
                     }
                 }
 
 
                 // add basic cards
-                foreach (string cardId in Settings.PhantomCards)
+                if (addBasic)
                 {
-                    cards.Add(new Card(cardId, "starter-" + cardId + "-" + Helper.GenerateRandomString(5), "1", false));
+                    foreach (string cardId in Settings.PhantomCards)
+                    {
+                        cards.Add(new Card(cardId, "starter-" + cardId + "-" + Helper.GenerateRandomString(5), "1", false));
+                    }
                 }
 
                 // only use highest level/gold cards

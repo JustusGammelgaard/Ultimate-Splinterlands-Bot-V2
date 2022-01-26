@@ -141,30 +141,38 @@ namespace Ultimate_Splinterlands_Bot_V2.Classes
             }
         }
 
-        /// <summary>
-        /// Writes startup information to log
-        /// </summary>
-        public static void WriteStartupInfoToLog()
-        {
-            WriteToLog("--------------------------------------------------------------");
-            WriteToLog("Ultimate Splinterlands Bot V2 by PC Jones");
-            WriteToLog("Join the telegram group https://t.me/ultimatesplinterlandsbot");
-            WriteToLog("Join the discord server https://discord.gg/hwSr7KNGs9");
-            WriteToLog("               Close this window to stop the bot");
-            WriteToLog("   Or write stop and press enter to stop the bot");
-            WriteToLog("-------------------------------------------------------------");
-        }
 
-        /// <summary>
-        /// Writes support information to log
-        /// </summary>
-        public static void WriteSupportInformationToLog()
+
+
+
+        public static void Help()
         {
-            WriteToLog("-------------------------------------------------------------");
-            WriteToLog("Ultimate Splinterlands Bot V2 by PC Jones");
-            WriteToLog("Join the telegram group https://t.me/ultimatesplinterlandsbot");
-            WriteToLog("Join the discord server https://discord.gg/hwSr7KNGs9");
-            WriteToLog("-------------------------------------------------------------");
+            WriteToLog("----------------------------HELP-----------------------------");
+            WriteToLog("------------------------ABBREVATIONS-------------------------");
+            WriteToLog("Local master  : The first bot in accounts.txt");
+            WriteToLog("Global master : The bot defined in master.txt");
+            WriteToLog("--------------------------COMMANDS---------------------------");
+            WriteToLog("-battle       : Start the bot for battle.");
+            WriteToLog("-battle_EOS   : Start the bot for battle in EOS mode. All bots will play until 40ECR has been reached, or the bot has obtained +1K rating. [NOT YET TESTED]");
+            WriteToLog("-claim        : Claim season rewards.");
+            WriteToLog("-t_global     : Transfer all rewards (cards + DEC) to global master, from local master. [NOT YET TESTED]");
+            WriteToLog("-t_all_cards  : Transfer ALL cards to local master.");
+            WriteToLog("-t_rew_cards  : Transfer ALL non-power sticks to local master");
+            WriteToLog("-t_DEC        : Transfer ALL DEC to local master.");
+            WriteToLog("-overview     : Get overview - Rating, ECR, etc, for all accounts.");
+            WriteToLog("-advance      : Advance all accounts to their max leauge (Must be used after renting at EoS).");
+            WriteToLog("-d_DEC        : Delegate DEC to each account (in accounts.txt, amn is send from local master). The specified amount should be written in config.txt under DEC_DELEGATE_AMOUNT=. (Should be used before renting)");
+            WriteToLog("----------------------------INFO-----------------------------");
+            WriteToLog("Arguments can be passed in succesion:");
+            WriteToLog("-claim -t_rew_cards -battle : will first claim rewards, send reward cards to local master, then battle.");
+            WriteToLog("---------------------End of Season (EoS)---------------------");
+            WriteToLog("1-2 days before EoS, -battle_EOS should be used. Ensures that all accounts can get good rewards");
+            WriteToLog("<1 days before EoS, -d_DEC, -rent_EoS [not yet implemented], -advance must ALL be used, in this order! (Otherwise, no rewards). Each system must use this");
+            WriteToLog("After EoS, -claim should be used.");
+            WriteToLog("Then, -battle, to start the bot for the next season.");
+            WriteToLog("Rewards can be sent to global by: -t_rew_cards, -t_DEC, -t_global");
+
+
         }
     }
 }
